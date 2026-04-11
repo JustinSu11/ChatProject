@@ -1,11 +1,13 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -O2 -std=c11 -pthread
 
-SERVER_SRC = server.c
-CLIENT_SRC = client.c
+SERVER_SRC = server.c utils.c
+CLIENT_SRC = client.c utils.c
+
 
 SERVER = server
 CLIENT = client
+
 
 all: $(SERVER) $(CLIENT)
 
