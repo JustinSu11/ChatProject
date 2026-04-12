@@ -1,13 +1,14 @@
-CC = gcc
+CC     = gcc
 CFLAGS = -Wall -Wextra -O2 -std=c11 -pthread
 
-SERVER_SRC = server.c utils.c
+# Source files for each binary.
+# The server links the registry, router, and logger modules.
+# The client only needs utils; routing logic lives on the server.
+SERVER_SRC = server.c utils.c registry.c router.c logger.c
 CLIENT_SRC = client.c utils.c
-
 
 SERVER = server
 CLIENT = client
-
 
 all: $(SERVER) $(CLIENT)
 
@@ -23,10 +24,11 @@ run-server: $(SERVER)
 run-client: $(CLIENT)
 	./$(CLIENT)
 
-debug-server:
+# Debug builds: no optimisation, include debug symbols for use with gdb.
+debug-server: $(SERVER_SRC)
 	$(CC) -g -O0 -Wall -std=c11 -pthread -o $(SERVER) $(SERVER_SRC)
 
-debug-client:
+debug-client: $(CLIENT_SRC)
 	$(CC) -g -O0 -Wall -std=c11 -pthread -o $(CLIENT) $(CLIENT_SRC)
 
 clean:
