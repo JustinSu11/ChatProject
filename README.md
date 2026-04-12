@@ -29,7 +29,7 @@ client.c        – client CLI, network I/O
 router.c        – command parsing and message routing  
 registry.c      – client registry with mutex protection  
 logger.c        – asynchronous logging  
-common.h        – shared definitions  
+utils.h        – shared definitions  
 Makefile
 
 ## Building
