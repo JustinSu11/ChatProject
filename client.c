@@ -26,13 +26,13 @@ int main(){
     setsockopt(client_socket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
     setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
-    /* Check socket creation */
+    // Check socket creation
     if (client_socket < 0) {
         perror("socket");
         return 1;
     }
 
-    /* Attempt to connect and abort on failure */
+    // Attempt to connect and abort on failure
     if (connectToServer(client_socket, address) != 0) {
         perror("connectToServer");
         close(client_socket);

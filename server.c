@@ -1,4 +1,5 @@
 //Server Implementation
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,18 +11,6 @@
 #include <malloc.h>
 #include <string.h>
 #include <pthread.h>
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -55,18 +44,23 @@ int main(){
     int client_port = ntohs(client_addr.sin_port);
     printf("Accepted connection from %s:%d\n", ip_str, client_port);
 
-
-    // receive data from the client and store it in the buffer
-    int bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-
-    if (bytes > 0) {
-        buffer[bytes] = '\0'; // null-terminate
-        printf("Client says: %s\n", buffer);
+    while (1) {
+        ssize_t bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+        if (bytes > 0) {
+            buffer[bytes] = '\0';
+            printf("Client says: %s\n", buffer);
+            // continue to receive more messages from this client
+        } 
+        if (bytes == 0) {
+            // client closed connection 
+            printf("Client closed connection\n");
+            break;
+        } else {
+            perror("recv");
+            break;
+        }
     }
 
-    char* response = "Hello from the server!"; // Generic response message 
-    // send a response back to the client
-    send(client_fd, response, strlen(response), 0); 
 
     close(client_fd);
     close(server_socket);
