@@ -1,3 +1,19 @@
+/*
+ * utils.c
+ * -------
+ * Low-level socket utility helpers shared by both server.c and client.c.
+ * These functions wrap the POSIX socket API to reduce boilerplate: creating
+ * a TCP socket, building a sockaddr_in address structure, and connecting to
+ * a remote server.
+ *
+ * Memory note: createIPv4Address() allocates a sockaddr_in on the heap.
+ * The caller is responsible for calling free() on the returned pointer once
+ * they are done with it (typically after bind/connect).
+ *
+ * Dependencies: utils.h, <stdlib.h>, <arpa/inet.h>, <sys/socket.h>,
+ *               <stdio.h>, <unistd.h>, <string.h>
+ */
+
 #include "utils.h"
 #include <stdlib.h>
 #include <arpa/inet.h>
@@ -6,34 +22,58 @@
 #include <unistd.h>
 #include <string.h>
 
-// Allocates memory for a sockaddr_in structure and returns address
-struct sockaddr_in* createIPv4Address(const char *ip, int port) {
-    
-    struct sockaddr_in *address = malloc(sizeof(struct sockaddr_in));
-    memset(address, 0, sizeof(struct sockaddr_in));
-    address->sin_family = AF_INET; // IPv4
-    address->sin_port = htons(port); // Convert port to network byte order
-    inet_pton(AF_INET, ip, &address->sin_addr); // Convert IP address from text to binary form
-    return address; 
+/*
+ * createIPv4Address(ip, port)
+ * ---------------------------
+ * Allocates and returns a heap-allocated sockaddr_in configured for the
+ * given IPv4 address string and port number. Uses inet_pton() to convert
+ * the dotted-decimal IP string to binary form, and htons() to put the port
+ * in network byte order.
+ *
+ * Pass "0.0.0.0" for ip to bind to all interfaces (server use).
+ * Pass a specific IP such as "127.0.0.1" to target a single host (client use).
+ *
+ * Returns a pointer to the allocated struct. The caller must free() it.
+ */
+struct sockaddr_in createIPv4Address(const char *ip, int port) {
+    struct sockaddr_in address;
+    memset(&address, 0, sizeof(address));
+    address.sin_family = AF_INET;
+    address.sin_port   = htons(port);
+    inet_pton(AF_INET, ip, &address.sin_addr);
+    return address;
 }
 
-// Creates a TCP socket for IPv4 communication and returns the socket file descriptor
-int createTCPIpv4Socket() {
-    //Create a socket with the following parameters: Domain: AF_INET (IPv4), 
-    // Type: SOCK_STREAM (TCP), Protocol: 0 (default)
-    // Returns a file descriptor for the new socket
+/*
+ * createTCPIpv4Socket()
+ * ----------------------
+ * Creates a POSIX TCP socket suitable for IPv4 communication.
+ * Equivalent to: socket(AF_INET, SOCK_STREAM, 0)
+ *
+ * Returns the socket file descriptor on success, or -1 on failure
+ * (in which case errno is set by socket()).
+ */
+int createTCPIpv4Socket(void) {
     return socket(AF_INET, SOCK_STREAM, 0);
 }
 
-// Attempts to connect to the server
-int connectToServer(int socket, struct sockaddr_in* address) {
-    int result = connect(socket, (struct sockaddr*)address, sizeof(*address));
-    if (result == 0){
+/*
+ * connectToServer(socket_fd, address)
+ * ------------------------------------
+ * Attempts to connect socket_fd to the server described by address.
+ * Prints a success or failure message to stdout. Closes the socket and
+ * returns -1 on failure so the caller can detect and handle the error.
+ *
+ * Returns 0 on success, -1 on failure.
+ */
+int connectToServer(int socket_fd, struct sockaddr_in *address) {
+    int result = connect(socket_fd, (struct sockaddr *)address,
+                         sizeof(*address));
+    if (result == 0) {
         printf("Connection successful.\n");
-    }
-    else {
-        printf("Connection failed.\n");
-        close(socket);
+    } else {
+        perror("connect");
+        close(socket_fd);
     }
     return result;
 }
